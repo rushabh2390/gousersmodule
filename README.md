@@ -23,4 +23,4 @@ go run main.go
 ````
 4. You can see api swagger here [http://localhost:8000/swagger/index.html](http://localhost:8000/swagger/index.html)
 
-![Api list]("api-swagger.jpg")
+![Api list](api-swagger.jpg)
