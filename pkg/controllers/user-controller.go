@@ -9,7 +9,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rushabh2390/gousersmodule/pkg/models"
 	"github.com/rushabh2390/gousersmodule/pkg/utils"
-
 )
 
 // @Summary Get Users

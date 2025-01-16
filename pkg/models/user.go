@@ -16,7 +16,7 @@ var db *gorm.DB
 
 type CustomDate time.Time
 
-var jwtKey = []byte("my_secret_key")
+var jwtKey = []byte("123456")
 
 const customLayout = "2006-01-02"
 
@@ -73,7 +73,7 @@ type Credentials struct {
 }
 
 type Claims struct {
-	Username string `json:"username"`
+	Email string `json:"email"`
 	jwt.StandardClaims
 }
 type JWTResponse struct {
@@ -129,7 +129,9 @@ func (u *User) UpdateUser() (*User, error) {
 func (cred *Credentials) LoginUser() (*JWTResponse, error) {
 	var user User
 	if err := db.Model(&User{}).Where("username = ?", cred.Username).First(&user).Error; err != nil {
-		return nil, err
+		if err := db.Model(&User{}).Where("email = ?", cred.Username).First(&user).Error; err != nil {
+			return nil, errors.New("invalid username or password")
+		}
 	}
 	if !CheckPasswordHash(cred.Password, user.Password) {
 		return nil, errors.New("invalid username or password")
@@ -138,10 +140,16 @@ func (cred *Credentials) LoginUser() (*JWTResponse, error) {
 	// Create JWT token
 	expirationTime := time.Now().Add(5 * time.Minute)
 	claims := &Claims{
-		Username: cred.Username,
+		Email: user.Email,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 		},
+	}
+	env, err := config.LoadConfig()
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		jwtKey = []byte(env.JWTSecret)
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(jwtKey)
