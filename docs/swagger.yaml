@@ -1,12 +1,24 @@
 definitions:
+  models.Credentials:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
   models.ErrorResponse:
     properties:
       message:
         type: string
     type: object
+  models.JWTResponse:
+    properties:
+      token:
+        type: string
+    type: object
   models.User:
     properties:
-      dateOfBirth:
+      date_of_birth:
         type: string
       email:
         type: string
@@ -26,7 +38,37 @@ definitions:
 info:
   contact: {}
 paths:
-  /users/:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user and returns a JWT token
+      parameters:
+      - description: Login Credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/models.Credentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.JWTResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Login User
+      tags:
+      - users
+  /users:
     get:
       consumes:
       - application/json

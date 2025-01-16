@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -14,6 +15,8 @@ import (
 var db *gorm.DB
 
 type CustomDate time.Time
+
+var jwtKey = []byte("my_secret_key")
 
 const customLayout = "2006-01-02"
 
@@ -73,6 +76,9 @@ type Claims struct {
 	Username string `json:"username"`
 	jwt.StandardClaims
 }
+type JWTResponse struct {
+	Token string `json:"token"`
+}
 
 func init() {
 	config.Connect()
@@ -118,4 +124,30 @@ func (u *User) UpdateUser() (*User, error) {
 		return nil, err
 	} // Return the updated user
 	return u, nil
+}
+
+func (cred *Credentials) LoginUser() (*JWTResponse, error) {
+	var user User
+	if err := db.Model(&User{}).Where("username = ?", cred.Username).First(&user).Error; err != nil {
+		return nil, err
+	}
+	if !CheckPasswordHash(cred.Password, user.Password) {
+		return nil, errors.New("invalid username or password")
+	}
+
+	// Create JWT token
+	expirationTime := time.Now().Add(5 * time.Minute)
+	claims := &Claims{
+		Username: cred.Username,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &JWTResponse{Token: tokenString}, nil
 }
